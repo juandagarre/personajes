@@ -1,57 +1,113 @@
-# personajes
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prueba de audio</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba de audios</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 30px 15px;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+        }
+
+        button {
+            display: block;
+            width: 90%;
+            max-width: 350px;
+            margin: 15px auto;
+            padding: 15px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 1px solid #999;
+            background: #f2f2f2;
+        }
+
+        #estado {
+            margin-top: 25px;
+            font-size: 16px;
+        }
+    </style>
 </head>
+
 <body>
 
-<h2>Prueba de audio desde servidor</h2>
+    <h1>Prueba de audios</h1>
 
-<button onclick="reproducir()">▶ Reproducir</button>
-<button onclick="parar()">■ Parar</button>
+    <button onclick="reproducirAudio('01.mp3')">
+        🔊 Audio 01
+    </button>
 
-<p id="estado">Preparado</p>
+    <button onclick="reproducirAudio('02.mp3')">
+        🔊 Audio 02
+    </button>
 
-<audio id="audio" preload="auto">
-    <source src="audio/01.mp3" type="audio/mpeg">
-</audio>
+    <button onclick="reproducirAudio('03.mp3')">
+        🔊 Audio 03
+    </button>
 
-<script>
-const audio = document.getElementById("audio");
-const estado = document.getElementById("estado");
+    <button onclick="reproducirAudio('04.mp3')">
+        🔊 Audio 04
+    </button>
 
-function reproducir() {
-    estado.textContent = "Intentando reproducir...";
-    
-    audio.currentTime = 0;
-    
-    audio.play()
-        .then(() => {
-            estado.textContent = "Reproduciendo";
-        })
-        .catch(error => {
-            estado.textContent =
-                "ERROR: " + error.name + " - " + error.message;
-        });
-}
+    <button onclick="pararAudio()">
+        ⏹️ Parar audio
+    </button>
 
-function parar() {
-    audio.pause();
-    audio.currentTime = 0;
-    estado.textContent = "Parado";
-}
+    <div id="estado">Listo</div>
 
-audio.addEventListener("ended", () => {
-    estado.textContent = "Terminado";
-});
+    <script>
 
-audio.addEventListener("error", () => {
-    estado.textContent = "ERROR al cargar el audio";
-});
-</script>
+        let audioActual = null;
+
+        function reproducirAudio(nombreArchivo) {
+
+            // Detener el audio anterior si lo hubiera
+            if (audioActual) {
+                audioActual.pause();
+                audioActual.currentTime = 0;
+            }
+
+            // Crear el nuevo audio
+            audioActual = new Audio("audios/" + nombreArchivo);
+
+            document.getElementById("estado").textContent =
+                "Intentando reproducir " + nombreArchivo + "...";
+
+            audioActual.play()
+                .then(function() {
+                    document.getElementById("estado").textContent =
+                        "Reproduciendo " + nombreArchivo;
+                })
+                .catch(function(error) {
+                    document.getElementById("estado").textContent =
+                        "No se ha podido reproducir " + nombreArchivo;
+                    console.error(error);
+                });
+
+            audioActual.onended = function() {
+                document.getElementById("estado").textContent =
+                    "Audio terminado";
+            };
+        }
+
+        function pararAudio() {
+
+            if (audioActual) {
+                audioActual.pause();
+                audioActual.currentTime = 0;
+            }
+
+            document.getElementById("estado").textContent =
+                "Audio detenido";
+        }
+
+    </script>
 
 </body>
 </html>
