@@ -9552,24 +9552,34 @@ for (let i = 1; i <= totalPersonajes; i++) {
         window.speechSynthesis.speak(utterance);
     }
 
-    function preguntaSiguiente() {
-        window.speechSynthesis.cancel();
-        const p = personajes[personajeActualId];
-        if (currentIndex < p.preguntasIngles.length - 1) {
-            currentIndex++;
-            actualizarContadorUI();
-            ocultarContenido();
-        }
+function preguntaSiguiente() {
+    window.speechSynthesis.cancel();
+    const p = personajes[personajeActualId];
+
+    if (currentIndex < p.preguntasIngles.length - 1) {
+        currentIndex++;
+    } else {
+        currentIndex = 0;
     }
 
-    function preguntaAnterior() {
-        window.speechSynthesis.cancel();
-        if (currentIndex > 0) {
-            currentIndex--;
-            actualizarContadorUI();
-            ocultarContenido();
-        }
+    actualizarContadorUI();
+    ocultarContenido();
+}
+
+function preguntaAnterior() {
+    window.speechSynthesis.cancel();
+    const p = personajes[personajeActualId];
+
+    if (currentIndex > 0) {
+        currentIndex--;
+    } else {
+        currentIndex = p.preguntasIngles.length - 1;
     }
+
+    actualizarContadorUI();
+    ocultarContenido();
+}
+    
 </script>
 
 </body>
