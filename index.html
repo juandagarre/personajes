@@ -230,17 +230,16 @@
 <div class="container">
     <h1 id="app-title">Identificación</h1>
 
-    <!-- VISTA 0: AUTENTICACIÓN (LOGIN / REGISTRO) -->
+        <!-- VISTA 0: AUTENTICACIÓN (MAGIC LINK) -->
     <div id="view-auth" class="view active">
         <div class="auth-card">
-            <p style="color: #64748b; margin-top: 0;">Inicia sesión o regístrate para acceder al estudio:</p>
+            <p style="color: #64748b; margin-top: 0;">Introduce tu correo para recibir un enlace de acceso seguro:</p>
             <input type="email" id="auth-email" class="auth-input" placeholder="Correo electrónico">
-            <input type="password" id="auth-password" class="auth-input" placeholder="Contraseña">
-            <button class="auth-btn" id="btnLogin">Iniciar Sesión</button>
-            <button class="auth-btn" id="btnRegister" style="background-color: #0d9488;">Registrarse</button>
+            <button class="auth-btn" id="btnLoginLink">Enviar enlace de acceso</button>
             <p id="auth-mensaje"></p>
         </div>
     </div>
+
 
     <!-- VISTA 1: SELECCIÓN DE PERSONAJES -->
     <div id="view-selector" class="view">
@@ -9604,14 +9603,14 @@ const AUDIOS_EN_EMBEDDED = {};
     }
 </script>
 
-<!-- SDKs de Firebase y Control de Sesión -->
+<!-- SDKs de Firebase y Control de Sesión (Magic Link) -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { 
         getAuth, 
-        createUserWithEmailAndPassword, 
-        signInWithEmailAndPassword, 
-        sendEmailVerification, 
+        sendSignInLinkToEmail, 
+        isSignInWithEmailLink, 
+        signInWithEmailLink, 
         onAuthStateChanged, 
         signOut 
     } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -9630,41 +9629,62 @@ const AUDIOS_EN_EMBEDDED = {};
     const auth = getAuth(app);
 
     const emailInput = document.getElementById('auth-email');
-    const passwordInput = document.getElementById('auth-password');
-    const btnLogin = document.getElementById('btnLogin');
-    const btnRegister = document.getElementById('btnRegister');
-    const btnLogout = document.getElementById('btnLogout');
+    const btnLoginLink = document.getElementById('btnLoginLink');
     const authMensaje = document.getElementById('auth-mensaje');
+    const btnLogout = document.getElementById('btnLogout');
 
-    btnRegister.addEventListener('click', () => {
-        const email = emailInput.value;
-        const password = passwordInput.value;
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                sendEmailVerification(userCredential.user).then(() => {
-                    authMensaje.style.color = "green";
-                    authMensaje.textContent = "¡Registro exitoso! Revisa tu correo para verificar la cuenta.";
-                });
+    // Configuración para el enlace de correo
+    const actionCodeSettings = {
+        // URL a la que volverá el usuario al hacer clic en el correo (debe ser la misma página donde está tu app)
+        url: window.location.href.split('?')[0],
+        handleCodeInApp: true,
+    };
+
+    // 1. Si el usuario hace clic en el enlace de su correo y vuelve a la app
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+        let email = window.localStorage.getItem('emailForSignIn');
+        if (!email) {
+            // Si abrió el correo en otro dispositivo, le pedimos el correo por seguridad
+            email = window.prompt('Por favor, confirma tu correo electrónico para completar el acceso:');
+        }
+        signInWithEmailLink(auth, email, window.location.href)
+            .then((result) => {
+                window.localStorage.removeItem('emailForSignIn');
+                // Limpiamos la URL para quitar los códigos de seguridad largos de Firebase
+                window.history.replaceState({}, document.title, window.location.pathname);
             })
             .catch((error) => {
                 authMensaje.style.color = "red";
-                authMensaje.textContent = "Error: " + error.message;
+                authMensaje.textContent = "Error al validar el enlace: " + error.message;
             });
-    });
+    }
 
-    btnLogin.addEventListener('click', () => {
+    // 2. Botón para enviar el enlace al correo
+    btnLoginLink.addEventListener('click', () => {
         const email = emailInput.value;
-        const password = passwordInput.value;
-        signInWithEmailAndPassword(auth, email, password)
+        if (!email) {
+            authMensaje.style.color = "red";
+            authMensaje.textContent = "Por favor, introduce un correo electrónico.";
+            return;
+        }
+
+        sendSignInLinkToEmail(auth, email, actionCodeSettings)
+            .then(() => {
+                window.localStorage.setItem('emailForSignIn', email);
+                authMensaje.style.color = "green";
+                authMensaje.textContent = "¡Correo enviado! Revisa tu bandeja de entrada y haz clic en el enlace.";
+            })
             .catch((error) => {
                 authMensaje.style.color = "red";
-                authMensaje.textContent = "Error al iniciar sesión: " + error.message;
+                authMensaje.textContent = "Error al enviar el correo: " + error.message;
             });
     });
 
-    btnLogout.addEventListener('click', () => {
-        signOut(auth);
-    });
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            signOut(auth);
+        });
+    }
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -9673,18 +9693,16 @@ const AUDIOS_EN_EMBEDDED = {};
             document.getElementById('app-title').innerText = "Selecciona un Personaje";
         } else {
             window.speechSynthesis.cancel();
-            detenerAudioGrabado();
+            if (typeof detenerAudioGrabado === 'function') detenerAudioGrabado();
             document.getElementById('view-auth').classList.add('active');
             document.getElementById('view-selector').classList.remove('active');
             document.getElementById('view-text').classList.remove('active');
             document.getElementById('view-questions').classList.remove('active');
             document.getElementById('app-title').innerText = "Identificación";
-            emailInput.value = "";
-            passwordInput.value = "";
-            authMensaje.textContent = "";
         }
     });
 </script>
+
 
 </body>
 </html>
