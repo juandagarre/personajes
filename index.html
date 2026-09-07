@@ -224,6 +224,10 @@
         .auth-btn:hover { opacity: 0.9; }
         #auth-mensaje { font-size: 14px; margin-top: 10px; }
     </style>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
+    
 </head>
 <body>
 
@@ -9685,22 +9689,40 @@ const AUDIOS_EN_EMBEDDED = {};
             signOut(auth);
         });
     }
+emailjs.init("e_JkUHvKVQ4eBKEUs");
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            document.getElementById('view-auth').classList.remove('active');
-            document.getElementById('view-selector').classList.add('active');
-            document.getElementById('app-title').innerText = "Selecciona un Personaje";
-        } else {
-            window.speechSynthesis.cancel();
-            if (typeof detenerAudioGrabado === 'function') detenerAudioGrabado();
-            document.getElementById('view-auth').classList.add('active');
-            document.getElementById('view-selector').classList.remove('active');
-            document.getElementById('view-text').classList.remove('active');
-            document.getElementById('view-questions').classList.remove('active');
-            document.getElementById('app-title').innerText = "Identificación";
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        document.getElementById('view-auth').classList.remove('active');
+        document.getElementById('view-selector').classList.add('active');
+        document.getElementById('app-title').innerText = "Selecciona un Personaje";
+
+        const yaNotificado = localStorage.getItem('notificado_' + user.uid);
+        if (!yaNotificado) {
+            const templateParams = {
+                user_email: user.email
+            };
+
+            emailjs.send('service_ft1wkhu', 'template_4acbswy', templateParams)
+                .then(() => {
+                    console.log('Aviso enviado');
+                    localStorage.setItem('notificado_' + user.uid, 'true');
+                }, (error) => {
+                    console.error('Error:', error);
+                });
         }
-    });
+    } else {
+        window.speechSynthesis.cancel();
+        if (typeof detenerAudioGrabacion === 'function') detenerAudioGrabacion();
+        document.getElementById('view-selector').classList.remove('active');
+        document.getElementById('view-text').classList.remove('active');
+        document.getElementById('view-questions').classList.remove('active');
+        document.getElementById('view-auth').classList.add('active');
+        document.getElementById('app-title').innerText = "Identificación";
+    }
+});
+
+
 </script>
 
 
